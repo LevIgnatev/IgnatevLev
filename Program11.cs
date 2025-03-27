@@ -10,6 +10,8 @@ using System.Reflection;
 using System.Dynamic;
 using System.Diagnostics.Eventing.Reader;
 using System.IO;
+using System.Net;
+using System.Xml.Linq;
 
 namespace ConsoleApp14
 {
@@ -85,6 +87,17 @@ namespace ConsoleApp14
             AllRows.Insert(index, newrow);
             Console.WriteLine("Lesson added successfully");
             Console.WriteLine();
+        }
+        public void AddRowKNOWNPARAMETERS(int hours, int minutes, string subject, string classroom, string teachersname)
+        {
+            Row newrow = new Row(hours, minutes, subject, classroom, teachersname);
+            int index = Alltime.BinarySearch(hours * 60 + minutes);
+            if (index < 0)
+            {
+                index = ~index;
+            }
+            Alltime.Insert(index, (hours * 60 + minutes));
+            AllRows.Insert(index, newrow);
         }
         public void PrintRows()
         {
@@ -248,40 +261,40 @@ namespace ConsoleApp14
             Day field = (Day)fieldInfo.GetValue(null);
             return field;
         }
-        public static void ExportDay(string path, Day day)
+        public static void ExportDay(string path, Day day, string dayname)
         {
             using (StreamWriter sw = new StreamWriter(path, true, System.Text.Encoding.Default))
             {
-                sw.WriteLine(day);
+                sw.WriteLine($"{dayname}\n");
                 if (day.AllRows.Count != 0)
                 {
                     foreach (Row row in day.AllRows)
                     {
-                        sw.Write($"Lesson number: {day.AllRows.IndexOf(row) + 1}    ");
+                        sw.Write($"Lesson number:\n{day.AllRows.IndexOf(row) + 1}\n");
                         if (row.hours < 10 && row.minutes < 10)
                         {
-                            sw.Write($"Time: 0{row.hours}:0{row.minutes}    ");
+                            sw.Write($"Time:\n0{row.hours}:0{row.minutes}\n");
                         }
                         else if (row.hours < 10 && row.minutes >= 10)
                         {
-                            sw.Write($"Time: 0{row.hours}:{row.minutes}    ");
+                            sw.Write($"Time:\n0{row.hours}:{row.minutes}\n");
                         }
                         else if (row.hours >= 10 && row.minutes < 10)
                         {
-                            sw.Write($"Time: {row.hours}:0{row.minutes}    ");
+                            sw.Write($"Time:\n{row.hours}:0{row.minutes}\n");
                         }
                         else
                         {
-                            sw.Write($"Time: {row.hours}:{row.minutes}    ");
+                            sw.Write($"Time:\n{row.hours}:{row.minutes}\n");
                         }
-                        sw.Write($"Subject: {row.subject}    ");
-                        sw.Write($"Classroom: {row.classroom}    ");
-                        sw.Write($"Teachers name: {row.teachersname}\n");
+                        sw.Write($"Subject:\n{row.subject}\n");
+                        sw.Write($"Classroom:\n{row.classroom}\n");
+                        sw.Write($"Teachers name:\n{row.teachersname}\n");
                     }
                 }
                 else
                 {
-                    sw.WriteLine("Nothing planned yet.");
+                    sw.WriteLine("Nothing planned yet.\n");
                 }
                 sw.WriteLine();
             }
@@ -298,7 +311,44 @@ namespace ConsoleApp14
             {
                 using (StreamReader sr = new StreamReader(path))
                 {
-
+                    List<string> AllWeekDays = new List<string>{"monday", "tuesday", "wednesday", "thursday", "friday", "saturday", "sunday"};
+                    for (int i = 0; i <= 6; i++)
+                    {
+                        sr.ReadLine();
+                        sr.ReadLine();
+                        string a = sr.ReadLine();
+                        if (a == "Nothing planned yet.")
+                        {
+                            sr.ReadLine();
+                            sr.ReadLine();
+                            continue;
+                        }
+                        else
+                        {
+                            while (true)
+                            {
+                                sr.ReadLine();
+                                sr.ReadLine();
+                                string b = sr.ReadLine();
+                                int hour = Convert.ToInt32($"{b[0]}{b[1]}");
+                                int minute = Convert.ToInt32($"{b[3]}{b[4]}");
+                                sr.ReadLine();
+                                string subj = sr.ReadLine();
+                                sr.ReadLine();
+                                string classr = sr.ReadLine();
+                                sr.ReadLine();
+                                string teach = sr.ReadLine();
+                                FieldInfo fieldInfo = typeof(Week).GetField(AllWeekDays[i], BindingFlags.Static | BindingFlags.Public);
+                                Day field = (Day)fieldInfo.GetValue(null);
+                                field.AddRowKNOWNPARAMETERS(hour, minute, subj, classr, teach);
+                                string c = sr.ReadLine();
+                                if (c != "Lesson number:")
+                                {
+                                    break;
+                                }
+                            }
+                        }
+                    }
                 }
             }
                 while (true)
@@ -346,16 +396,14 @@ namespace ConsoleApp14
                         GetDay().ChangeRow();
                     }
                 }
-            using (StreamWriter sw = new StreamWriter(path, false, System.Text.Encoding.Default))
-            {
-                ExportDay(path, Week.monday);
-                ExportDay(path, Week.tuesday);
-                ExportDay(path, Week.wednesday);
-                ExportDay(path, Week.thursday);
-                ExportDay(path, Week.friday);
-                ExportDay(path, Week.saturday);
-                ExportDay(path, Week.sunday);
-            }
+            using (StreamWriter sw = new StreamWriter(path, false, System.Text.Encoding.Default)) { }
+            ExportDay(path, Week.monday, "Monday");
+            ExportDay(path, Week.tuesday, "Tuesday");
+            ExportDay(path, Week.wednesday, "Wednesday");
+            ExportDay(path, Week.thursday, "Thursday");
+            ExportDay(path, Week.friday, "Friday");
+            ExportDay(path, Week.saturday, "Saturday");
+            ExportDay(path, Week.sunday, "Sunday");
         }
     }
 }
